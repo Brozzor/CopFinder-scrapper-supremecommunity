@@ -1,0 +1,25 @@
+{
+  "name": "copbotoutils",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Brozzor/CopBotOutils.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Brozzor/CopBotOutils/issues"
+  },
+  "homepage": "https://github.com/Brozzor/CopBotOutils#readme",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "mysql": "^2.18.1",
+    "node-fetch": "^2.6.0",
+    "util": "^0.12.3"
+  }
+}
