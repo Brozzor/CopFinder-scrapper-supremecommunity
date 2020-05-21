@@ -31,7 +31,7 @@ module.exports = async (browser) => {
     let scMainPage = cheerio.load(await response.text());
     scMainPage = scMainPage(".col-sm-4.col-xs-12.app-lr-pad-2").find("a")[0].attribs.href;
 
-    scMainPage = "/season/spring-summer2020/droplist/2020-05-07/";
+    //scMainPage = "/season/spring-summer2020/droplist/2020-05-07/";
 
     const resLastDrop = await fetch(`https://www.supremecommunity.com${scMainPage}`);
     let scLastDropPage = cheerio.load(await resLastDrop.text());
@@ -43,7 +43,6 @@ module.exports = async (browser) => {
     infosWeek.week = await searchWeek(scLastDropPage("title").text().trim());
     infosWeek.moreInfos = await scLastDropPage(".sc-moreinfos").text().trim();
     infosWeek.season = await searchSeason(scMainPage);
-    console.log(addslashes(infosWeek.season))
 
     while (i < lenItem) {
       let itemId = scLastDropPage(".masonry__item").find(".card-details")[i].attribs["data-itemid"];
@@ -59,15 +58,9 @@ module.exports = async (browser) => {
         .text()
         .trim()
         .replace(/[\s]{2,}/g, " ");
-      let arrItemImg = [];
-      while (j < lenImg) {
-        let imgUnique = scItemPage("img")[j].attribs;
-        if (!imgUnique.src.includes("/s/img/deals/")) {
-          arrItemImg.push(JSON.parse(JSON.stringify(imgUnique)));
-        }
-        j++;
-      }
-      allItems[itemId].img = arrItemImg;
+
+      allItems[itemId].img = JSON.parse(JSON.stringify(scItemPage("img")[0].attribs));
+
       await sleep(500);
       i++;
     }
@@ -114,23 +107,44 @@ module.exports = async (browser) => {
   }
 
   async function insertNewSeason(infosWeek) {
-    let sqlRequest = `INSERT INTO drop_season(season,week,date_drop,more_infos) VALUES('${addslashes(infosWeek.season)}','${addslashes(infosWeek.week)}','2020-09-11','${addslashes(infosWeek.moreInfos)}')`;
+    let sqlRequest = `INSERT INTO drop_season(season,week,date_drop,more_infos) VALUES('${addslashes(infosWeek.season)}','${addslashes(infosWeek.week)}','2020-09-11','${addslashes(
+      infosWeek.moreInfos
+    )}')`;
     await mysql.query(sqlRequest);
   }
 
   async function storage(allItems, infosWeek) {
     console.log(allItems);
     console.log(infosWeek);
-    if (!await isExist(infosWeek.season, infosWeek.week)){
+    if (!(await isExist(infosWeek.season, infosWeek.week))) {
       await insertNewSeason(infosWeek);
     }
-
+    await checkUpdateContent(allItems, infosWeek);
   }
 
-  function addslashes(ch) { 
-    ch = ch.replace(/\\/g,"\\\\");
-    ch = ch.replace(/\'/g,"\\'");
-    ch = ch.replace(/\"/g,"\\\"");
+  async function checkUpdateContent(allItems, infosWeek) {
+    const items = await mysql.query(`SELECT * FROM drop_items WHERE idseason = 3`);
+    for (const i in items) { 
+      if (await checkExistAndChange(items[i], allItems)){
+
+      }
+    }
+  }
+
+  async function checkExistAndChange(items, allItems) {
+    let i = 0;
+    console.log(allItems.length) 
+    console.log(allItems[0]) 
+    while (i < allItems.length){
+      console.log(allItems[i]) 
+      i++;
+    }
+  }
+
+  function addslashes(ch) {
+    ch = ch.replace(/\\/g, "\\\\");
+    ch = ch.replace(/\'/g, "\\'");
+    ch = ch.replace(/\"/g, '\\"');
     return ch;
   }
 
