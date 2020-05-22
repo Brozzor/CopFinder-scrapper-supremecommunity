@@ -49,17 +49,17 @@ module.exports = async (browser) => {
       const resItem = await fetch(`https://www.supremecommunity.com/season/itemdetails/${itemId}/`);
       let scItemPage = cheerio.load(await resItem.text());
 
-      let j = 0;
       lenImg = scItemPage("img").length;
-      allItems[itemId] = new Object();
-      allItems[itemId].name = scItemPage("h1").text();
-      allItems[itemId].desc = scItemPage("h2.detail-desc").text();
-      allItems[itemId].price = scItemPage("body > div > div:nth-child(3) > div > div:nth-child(5) > div > ul > li:nth-child(2) > div.tab__content > div")
+      allItems[i] = new Object();
+      allItems[i].id = itemId;
+      allItems[i].name = scItemPage("h1").text();
+      allItems[i].desc = scItemPage("h2.detail-desc").text();
+      allItems[i].price = scItemPage("body > div > div:nth-child(3) > div > div:nth-child(5) > div > ul > li:nth-child(2) > div.tab__content > div")
         .text()
         .trim()
         .replace(/[\s]{2,}/g, " ");
 
-      allItems[itemId].img = JSON.parse(JSON.stringify(scItemPage("img")[0].attribs));
+      allItems[i].img = scItemPage("img")[0].attribs.src;
 
       await sleep(500);
       i++;
@@ -114,31 +114,83 @@ module.exports = async (browser) => {
   }
 
   async function storage(allItems, infosWeek) {
-    console.log(allItems);
-    console.log(infosWeek);
     if (!(await isExist(infosWeek.season, infosWeek.week))) {
       await insertNewSeason(infosWeek);
     }
     await checkUpdateContent(allItems, infosWeek);
+    await addNewItemsInDb(allItems, infosWeek);
+  }
+
+  async function addNewItemsInDb(allItems, infosWeek) {
+    const idseason = await mysql.query(`SELECT id FROM drop_season WHERE season = '${addslashes(infosWeek.season)}' AND week = '${infosWeek.week}'`);
+    const items = await mysql.query(`SELECT * FROM drop_items WHERE idseason = ${idseason[0].id}`);
+    let i = 0;
+
+    while (i < await itemsLength(allItems)){
+      if (!await checkExistRevert(allItems[i], items)){
+       await mysql.query(`INSERT INTO drop_items(idsc,idseason,name,description, price, img) VALUES('${allItems[i].id}','${idseason[0].id}','${addslashes(allItems[i].name)}','${addslashes(allItems[i].desc)}','${addslashes(allItems[i].price)}','${addslashes(allItems[i].img)}')`);
+      }
+      i++;
+    }
+    
   }
 
   async function checkUpdateContent(allItems, infosWeek) {
-    const items = await mysql.query(`SELECT * FROM drop_items WHERE idseason = 3`);
-    for (const i in items) { 
-      if (await checkExistAndChange(items[i], allItems)){
-
+    const idseason = await mysql.query(`SELECT id FROM drop_season WHERE season = '${addslashes(infosWeek.season)}' AND week = '${infosWeek.week}'`);
+    const items = await mysql.query(`SELECT * FROM drop_items WHERE idseason = ${idseason[0].id}`);
+    for (const i in items) {
+      if ((await checkExist(items[i], allItems)) && (await checkChange(await checkExist(items[i], allItems), items[i]))) {
+        await updateChange(await checkExist(items[i], allItems));
       }
+      // mettre une condition else pour supprimer ceux qui n'existent plus
     }
   }
 
-  async function checkExistAndChange(items, allItems) {
+  async function updateChange(value) {
+    await mysql.query(`UPDATE drop_items SET name = '${addslashes(value.name)}', description = '${addslashes(value.desc)}', price = '${addslashes(value.price)}', img = '${addslashes(value.img)}' WHERE idsc = '${value.id}'`);
+  }
+
+  async function checkChange(findItems, oldItem) {
+    if (!findItems) {
+      return false;
+    }
+
+    if (findItems.name != oldItem.name || findItems.price != oldItem.price || findItems.desc != oldItem.description || findItems.img != oldItem.img) {
+      return true;
+    }
+    return false;
+  }
+
+  async function checkExist(items, allItems) {
     let i = 0;
-    console.log(allItems.length) 
-    console.log(allItems[0]) 
-    while (i < allItems.length){
-      console.log(allItems[i]) 
+    while (i < (await itemsLength(allItems))) {
+      if (items.idsc == allItems[i].id) {
+        return allItems[i];
+      }
       i++;
     }
+    return false;
+  }
+
+  async function checkExistRevert(items, allItems) {
+    let i = 0;
+
+    while (i < allItems.length) {
+
+      if (parseInt(items.id) == parseInt(allItems[i].idsc)) {
+        return true;
+      }
+      i++;
+    }
+    return false;
+  }
+
+  async function itemsLength(allItems) {
+    let i = 0;
+    while (allItems[i] != undefined) {
+      i++;
+    }
+    return i;
   }
 
   function addslashes(ch) {

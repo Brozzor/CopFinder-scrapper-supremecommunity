@@ -12,6 +12,12 @@ const Copbot = require("./func");
         await copbot.times();
       } else if (args == "findDrop") {
         await copbot.findDroplistPage();
+      }else{
+        console.log('----------');
+        console.log('Commandes :');
+        console.log('----------');
+        console.log('1. times - declenchement avant les drop pour calculer les temps');
+        console.log('2. findDrop - trouver le dernier drop et inser toute les infos');
       }
 
     } catch (error) {
