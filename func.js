@@ -1,6 +1,8 @@
 const mysql = require("./bdd");
 const fetch = require("node-fetch");
 const cheerio = require("cheerio");
+const fs = require('fs');
+const request = require('request');
 
 module.exports = async (browser) => {
   const sleep = (ms, dev = 1) => {
@@ -41,6 +43,7 @@ module.exports = async (browser) => {
     let allItems = new Object();
     let infosWeek = new Object();
     infosWeek.week = await searchWeek(scLastDropPage("title").text().trim());
+    infosWeek.date = await searchDate(scMainPage);
     infosWeek.moreInfos = await scLastDropPage(".sc-moreinfos").text().trim();
     infosWeek.season = await searchSeason(scMainPage);
 
@@ -95,6 +98,10 @@ module.exports = async (browser) => {
     }
   }
 
+  async function searchDate(str) {
+    return str.split("/")[4];
+  }
+
   async function isExist(season, week) {
     let res = true;
     const nb = await mysql.query(`SELECT count(*) as nb FROM drop_season WHERE season = '${season}' AND week = '${week}' `);
@@ -107,7 +114,7 @@ module.exports = async (browser) => {
   }
 
   async function insertNewSeason(infosWeek) {
-    let sqlRequest = `INSERT INTO drop_season(season,week,date_drop,more_infos) VALUES('${addslashes(infosWeek.season)}','${addslashes(infosWeek.week)}','2020-09-11','${addslashes(
+    let sqlRequest = `INSERT INTO drop_season(season,week,date_drop,more_infos) VALUES('${addslashes(infosWeek.season)}','${addslashes(infosWeek.week)}','${addslashes(infosWeek.date)}','${addslashes(
       infosWeek.moreInfos
     )}')`;
     await mysql.query(sqlRequest);
@@ -193,6 +200,30 @@ module.exports = async (browser) => {
     return i;
   }
 
+  async function downloadImg() {
+
+var download = function(uri, filename, callback){
+  request.head(uri, function(err, res, body){
+    console.log('content-type:', res.headers['content-type']);
+    console.log('content-length:', res.headers['content-length']);
+
+    request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
+  });
+};
+
+download('https://www.google.com/images/srpr/logo3w.png', 'google.png', function(){
+  console.log('done');
+});
+}
+
+  async function itemsLength(allItems) {
+    let i = 0;
+    while (allItems[i] != undefined) {
+      i++;
+    }
+    return i;
+  }
+
   function addslashes(ch) {
     ch = ch.replace(/\\/g, "\\\\");
     ch = ch.replace(/\'/g, "\\'");
@@ -204,5 +235,6 @@ module.exports = async (browser) => {
     sleep,
     findDroplistPage,
     times,
+    downloadImg,
   };
 };
