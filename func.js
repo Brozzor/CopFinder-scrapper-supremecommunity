@@ -141,7 +141,10 @@ module.exports = async (browser) => {
           )}','${addslashes(allItems[i].price)}','${addslashes(allItems[i].img)}')`
         );
         const lastIdInsert = await mysql.query(`SELECT LAST_INSERT_ID() FROM drop_items`);
-        await downloadImg(addslashes(allItems[i].img),lastIdInsert);
+        if(lastIdInsert != undefined){
+          await downloadImg(addslashes(allItems[i].img),lastIdInsert[0]['LAST_INSERT_ID()']);
+        }
+        
       }
       i++;
     }
@@ -159,11 +162,14 @@ module.exports = async (browser) => {
   }
 
   async function updateChange(value) {
+    const items = await mysql.query(`SELECT id FROM drop_items WHERE idsc = ${value.id}`);
+    await downloadImg(addslashes(value.img),items[0].id);
     await mysql.query(
       `UPDATE drop_items SET name = '${addslashes(value.name)}', description = '${addslashes(value.desc)}', price = '${addslashes(value.price)}', img = '${addslashes(value.img)}' WHERE idsc = '${
         value.id
       }'`
     );
+    
   }
 
   async function checkChange(findItems, oldItem) {
@@ -209,9 +215,13 @@ module.exports = async (browser) => {
   }
 
   async function downloadImg(url,id) {
-    if(id != undefined){
-      await download_image(`https://www.supremecommunity.com${url}`, `images/${id[0]['LAST_INSERT_ID()']}.jpg`);
+    if (fs.existsSync(`images/${id}.jpg`)){
+      fs.unlinkSync(`images/${id}.jpg`);
     }
+    if (id != undefined){
+      await download_image(`https://www.supremecommunity.com${url}`, `images/${id}.jpg`);
+    }
+    
   }
 
   const download_image = (url, image_path) =>
