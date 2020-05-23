@@ -27,14 +27,15 @@ module.exports = async (browser) => {
     }
   }
 
-  async function findDroplistPage() {
+  async function findDroplistPage(url = "") {
     // recherche de la derniere page de droplist
     let response = await fetch("https://www.supremecommunity.com/season/latest/droplists/");
     let scMainPage = cheerio.load(await response.text());
     scMainPage = scMainPage(".col-sm-4.col-xs-12.app-lr-pad-2").find("a")[0].attribs.href;
 
-    //scMainPage = "/season/spring-summer2020/droplist/2020-05-07/";
-
+    if (url.length > 4){
+      scMainPage = "/" + url;
+    }
     const resLastDrop = await fetch(`https://www.supremecommunity.com${scMainPage}`);
     let scLastDropPage = cheerio.load(await resLastDrop.text());
 

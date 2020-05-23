@@ -5,14 +5,15 @@ const Copbot = require("./func");
     try {
       const copbot = await Copbot();
   
-      let args = process.argv.slice(2);
+      let args = process.argv.slice(2)[0];
+      let args2 = process.argv.slice(2)[1];
+
       if (args == "update") {
         
       } else if (args == "times") {
-        await copbot.downloadImg();
-        //await copbot.times();
+        await copbot.times();
       } else if (args == "findDrop") {
-        await copbot.findDroplistPage();
+        await copbot.findDroplistPage(args2);
         await copbot.downloadImg();
 
       }else{
