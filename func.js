@@ -219,6 +219,9 @@ module.exports = async (browser) => {
     if (fs.existsSync(`images/${id}.jpg`)){
       fs.unlinkSync(`images/${id}.jpg`);
     }
+    if (url.includes('placeholder.jpg')){
+      return false;
+    }
     if (id != undefined){
       await download_image(`https://www.supremecommunity.com${url}`, `images/${id}.jpg`);
     }
