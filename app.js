@@ -9,7 +9,8 @@ const Copbot = require("./func");
       if (args == "update") {
         
       } else if (args == "times") {
-        await copbot.times();
+        await copbot.downloadImg();
+        //await copbot.times();
       } else if (args == "findDrop") {
         await copbot.findDroplistPage();
         await copbot.downloadImg();

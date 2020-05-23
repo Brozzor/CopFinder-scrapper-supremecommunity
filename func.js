@@ -1,8 +1,8 @@
 const mysql = require("./bdd");
 const fetch = require("node-fetch");
 const cheerio = require("cheerio");
-const fs = require('fs');
-const request = require('request');
+const fs = require("fs");
+const axios = require("axios");
 
 module.exports = async (browser) => {
   const sleep = (ms, dev = 1) => {
@@ -133,13 +133,18 @@ module.exports = async (browser) => {
     const items = await mysql.query(`SELECT * FROM drop_items WHERE idseason = ${idseason[0].id}`);
     let i = 0;
 
-    while (i < await itemsLength(allItems)){
-      if (!await checkExistRevert(allItems[i], items)){
-       await mysql.query(`INSERT INTO drop_items(idsc,idseason,name,description, price, img) VALUES('${allItems[i].id}','${idseason[0].id}','${addslashes(allItems[i].name)}','${addslashes(allItems[i].desc)}','${addslashes(allItems[i].price)}','${addslashes(allItems[i].img)}')`);
+    while (i < (await itemsLength(allItems))) {
+      if (!(await checkExistRevert(allItems[i], items))) {
+        await mysql.query(
+          `INSERT INTO drop_items(idsc,idseason,name,description, price, img) VALUES('${allItems[i].id}','${idseason[0].id}','${addslashes(allItems[i].name)}','${addslashes(
+            allItems[i].desc
+          )}','${addslashes(allItems[i].price)}','${addslashes(allItems[i].img)}')`
+        );
+        const lastIdInsert = await mysql.query(`SELECT LAST_INSERT_ID() FROM drop_items`);
+        await downloadImg(addslashes(allItems[i].img),lastIdInsert);
       }
       i++;
     }
-    
   }
 
   async function checkUpdateContent(allItems, infosWeek) {
@@ -154,7 +159,11 @@ module.exports = async (browser) => {
   }
 
   async function updateChange(value) {
-    await mysql.query(`UPDATE drop_items SET name = '${addslashes(value.name)}', description = '${addslashes(value.desc)}', price = '${addslashes(value.price)}', img = '${addslashes(value.img)}' WHERE idsc = '${value.id}'`);
+    await mysql.query(
+      `UPDATE drop_items SET name = '${addslashes(value.name)}', description = '${addslashes(value.desc)}', price = '${addslashes(value.price)}', img = '${addslashes(value.img)}' WHERE idsc = '${
+        value.id
+      }'`
+    );
   }
 
   async function checkChange(findItems, oldItem) {
@@ -183,7 +192,6 @@ module.exports = async (browser) => {
     let i = 0;
 
     while (i < allItems.length) {
-
       if (parseInt(items.id) == parseInt(allItems[i].idsc)) {
         return true;
       }
@@ -200,21 +208,25 @@ module.exports = async (browser) => {
     return i;
   }
 
-  async function downloadImg() {
+  async function downloadImg(url,id) {
+    if(id != undefined){
+      await download_image(`https://www.supremecommunity.com${url}`, `images/${id[0]['LAST_INSERT_ID()']}.jpg`);
+    }
+  }
 
-var download = function(uri, filename, callback){
-  request.head(uri, function(err, res, body){
-    console.log('content-type:', res.headers['content-type']);
-    console.log('content-length:', res.headers['content-length']);
-
-    request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
-  });
-};
-
-download('https://www.google.com/images/srpr/logo3w.png', 'google.png', function(){
-  console.log('done');
-});
-}
+  const download_image = (url, image_path) =>
+    axios({
+      url,
+      responseType: "stream",
+    }).then(
+      (response) =>
+        new Promise((resolve, reject) => {
+          response.data
+            .pipe(fs.createWriteStream(image_path))
+            .on("finish", () => resolve())
+            .on("error", (e) => reject(e));
+        })
+    );
 
   async function itemsLength(allItems) {
     let i = 0;
