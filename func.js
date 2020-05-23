@@ -33,7 +33,7 @@ module.exports = async (browser) => {
     let scMainPage = cheerio.load(await response.text());
     scMainPage = scMainPage(".col-sm-4.col-xs-12.app-lr-pad-2").find("a")[0].attribs.href;
 
-    if (url.length > 4){
+    if (url.length > 4) {
       scMainPage = "/" + url;
     }
     const resLastDrop = await fetch(`https://www.supremecommunity.com${scMainPage}`);
@@ -142,10 +142,9 @@ module.exports = async (browser) => {
           )}','${addslashes(allItems[i].price)}','${addslashes(allItems[i].img)}')`
         );
         const lastIdInsert = await mysql.query(`SELECT LAST_INSERT_ID() FROM drop_items`);
-        if(lastIdInsert != undefined){
-          await downloadImg(addslashes(allItems[i].img),lastIdInsert[0]['LAST_INSERT_ID()']);
+        if (lastIdInsert != undefined) {
+          await downloadImg(addslashes(allItems[i].img), lastIdInsert[0]["LAST_INSERT_ID()"]);
         }
-        
       }
       i++;
     }
@@ -164,13 +163,12 @@ module.exports = async (browser) => {
 
   async function updateChange(value) {
     const items = await mysql.query(`SELECT id FROM drop_items WHERE idsc = ${value.id}`);
-    await downloadImg(addslashes(value.img),items[0].id);
+    await downloadImg(addslashes(value.img), items[0].id);
     await mysql.query(
       `UPDATE drop_items SET name = '${addslashes(value.name)}', description = '${addslashes(value.desc)}', price = '${addslashes(value.price)}', img = '${addslashes(value.img)}' WHERE idsc = '${
         value.id
       }'`
     );
-    
   }
 
   async function checkChange(findItems, oldItem) {
@@ -215,17 +213,17 @@ module.exports = async (browser) => {
     return i;
   }
 
-  async function downloadImg(url,id) {
-    if (fs.existsSync(`images/${id}.jpg`)){
+  async function downloadImg(url, id) {
+    if (fs.existsSync(`images/${id}.jpg`)) {
       fs.unlinkSync(`images/${id}.jpg`);
     }
-    if (url.includes('placeholder.jpg')){
-      return false;
-    }
-    if (id != undefined){
+
+    if (id != undefined) {
+      if (url.includes("placeholder.jpg")) {
+        return false;
+      }
       await download_image(`https://www.supremecommunity.com${url}`, `images/${id}.jpg`);
     }
-    
   }
 
   const download_image = (url, image_path) =>
