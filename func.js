@@ -115,9 +115,8 @@ module.exports = async (browser) => {
   }
 
   async function insertNewSeason(infosWeek) {
-    let sqlRequest = `INSERT INTO drop_season(season,week,date_drop,more_infos) VALUES('${addslashes(infosWeek.season)}','${addslashes(infosWeek.week)}','${addslashes(infosWeek.date)}','${addslashes(
-      infosWeek.moreInfos
-    )}')`;
+    let sqlRequest = `INSERT INTO drop_season(season,week,date_drop,more_infos) VALUES('${addslashes(infosWeek.season)}','${addslashes(infosWeek.week)}','${addslashes(infosWeek.date)}','${
+      infosWeek.moreInfos.replace(new RegExp("[^(a-zA-Z)]", "g"), "") }')`;
     await mysql.query(sqlRequest);
   }
 
