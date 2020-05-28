@@ -164,7 +164,7 @@ module.exports = async (browser) => {
       if (fs.existsSync(`images/${items[i]}.jpg`)) {
         fs.unlinkSync(`images/${items[i]}.jpg`);
       }
-
+      i++;
     }
     
   }
