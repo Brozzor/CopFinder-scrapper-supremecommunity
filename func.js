@@ -69,6 +69,7 @@ module.exports = async (browser) => {
       i++;
     }
     await storage(allItems, infosWeek);
+    await removeOldItems(allItems, infosWeek);
   }
 
   async function searchWeek(str) {
@@ -126,6 +127,46 @@ module.exports = async (browser) => {
     }
     await checkUpdateContent(allItems, infosWeek);
     await addNewItemsInDb(allItems, infosWeek);
+  }
+
+  async function removeOldItems(allItems, infosWeek){
+    const idseason = await mysql.query(`SELECT id FROM drop_season WHERE season = '${addslashes(infosWeek.season)}' AND week = '${infosWeek.week}'`);
+    const items = await mysql.query(`SELECT * FROM drop_items WHERE idseason = ${idseason[0].id}`);
+    let i = 0;
+    let arrayItemsNotExist = [];
+    while (i < items.length) {
+      let j = 0;
+      let tempo = false;
+      while (j < await itemsLength(allItems)){
+        if (items[i].idsc == allItems[j].id){
+          tempo = true;
+          break;
+        }
+        j++;
+      }
+      if (!tempo){
+        arrayItemsNotExist.push(items[i].id)
+      }
+      i++;
+    }
+
+    await deleteItems(arrayItemsNotExist);
+  }
+
+  async function deleteItems(items){
+    if (items.length == 0){
+      return false;
+    }
+    let i = 0;
+    while (i < items.length){
+
+      await mysql.query(`DELETE FROM drop_items WHERE id = '${items[i]}'`);
+      if (fs.existsSync(`images/${items[i]}.jpg`)) {
+        fs.unlinkSync(`images/${items[i]}.jpg`);
+      }
+
+    }
+    
   }
 
   async function addNewItemsInDb(allItems, infosWeek) {

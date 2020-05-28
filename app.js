@@ -15,7 +15,7 @@ const Copbot = require("./func");
       } else if (args == "findDrop") {
         await copbot.findDroplistPage(args2);
         await copbot.downloadImg();
-
+        
       }else{
         console.log('----------');
         console.log('Commandes :');
